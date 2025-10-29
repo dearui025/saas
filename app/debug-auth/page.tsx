@@ -40,11 +40,12 @@ export default function DebugAuthPage() {
           session: sessionData?.session,
           profile: profileData,
           apiKey: apiKeyData,
-          profileError: profileError?.message,
-          apiKeyError: apiKeyError?.message,
-          sessionError: sessionError?.message
+          profileError: profileError?.message || profileError,
+          apiKeyError: apiKeyError?.message || apiKeyError,
+          sessionError: sessionError?.message || sessionError
         });
       } catch (err: any) {
+        console.error('获取调试信息失败:', err);
         setError(err.message || "获取调试信息失败");
       }
     }

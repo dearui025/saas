@@ -32,7 +32,13 @@ export default function SignUpPage() {
       router.push("/");
       router.refresh();
     } catch (err: any) {
-      setError(err.message || "注册失败，请稍后重试");
+      console.error('注册失败:', err);
+      // 显示更详细的错误信息
+      if (err.message) {
+        setError(err.message);
+      } else {
+        setError("注册失败，请稍后重试");
+      }
     } finally {
       setLoading(false);
     }

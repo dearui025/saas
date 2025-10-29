@@ -79,6 +79,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (profileError) {
         console.error('创建用户配置失败:', profileError);
+        console.error('用户ID:', data.user.id);
+        console.error('用户邮箱:', data.user.email);
+        console.error('用户全名:', fullName);
+        // 抛出错误以便上层能够处理
+        throw new Error(`创建用户配置失败: ${profileError.message || '未知错误'}`);
       }
 
       // 创建默认API密钥记录
@@ -95,6 +100,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (apiKeyError) {
         console.error('创建API密钥记录失败:', apiKeyError);
+        console.error('用户ID:', data.user.id);
+        // 抛出错误以便上层能够处理
+        throw new Error(`创建API密钥记录失败: ${apiKeyError.message || '未知错误'}`);
       }
     }
     
