@@ -3,6 +3,25 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
+    console.log('User setup API POST called')
+    
+    // 检查请求方法
+    if (request.method !== 'POST') {
+      return new NextResponse(
+        JSON.stringify({ 
+          success: false, 
+          error: `Method ${request.method} not allowed, expected POST` 
+        }),
+        { 
+          status: 405,
+          headers: {
+            'Content-Type': 'application/json',
+            'Allow': 'POST'
+          }
+        }
+      )
+    }
+    
     // 确保请求体存在
     if (!request.body) {
       return NextResponse.json(
@@ -70,4 +89,17 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
+}
+
+// 添加对其他HTTP方法的处理
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Allow': 'POST, OPTIONS',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  })
 }
