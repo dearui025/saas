@@ -3,6 +3,14 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
+    // 确保请求体存在
+    if (!request.body) {
+      return NextResponse.json(
+        { success: false, error: '请求体为空' },
+        { status: 400 }
+      )
+    }
+    
     const { user_id, email, full_name } = await request.json()
     
     if (!user_id || !email) {
@@ -56,6 +64,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, message: '用户设置完成' })
   } catch (error: any) {
     console.error('用户设置过程中发生错误:', error)
+    // 确保始终返回有效的JSON响应
     return NextResponse.json(
       { success: false, error: error.message || '服务器内部错误' },
       { status: 500 }

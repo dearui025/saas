@@ -44,6 +44,17 @@ export default function SignUpPage() {
           }),
         });
         
+        // 检查响应状态
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // 检查响应内容类型
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('服务器返回了无效的响应格式');
+        }
+        
         const result = await response.json();
         
         if (!result.success) {
