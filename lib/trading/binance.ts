@@ -61,3 +61,8 @@ export async function getCurrentUserBinanceClient() {
     return binance;
   }
 }
+
+// 获取默认的Binance客户端（用于API路由等无用户上下文的场景）
+export function getDefaultBinanceClient() {
+  return binance;
+}

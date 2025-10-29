@@ -3,14 +3,14 @@ import { getCurrentMarketState } from "@/lib/trading/current-market-state";
 
 export const GET = async () => {
   try {
-    // 并行获取所有加密货币价格
+    // 并行获取所有加密货币价格（使用默认客户端，因为API路由没有用户上下文）
     const [btcPricing, ethPricing, solPricing, dogePricing, bnbPricing] =
       await Promise.all([
-        getCurrentMarketState("BTC/USDT"),
-        getCurrentMarketState("ETH/USDT"),
-        getCurrentMarketState("SOL/USDT"),
-        getCurrentMarketState("DOGE/USDT"),
-        getCurrentMarketState("BNB/USDT"),
+        getCurrentMarketState("BTC/USDT", false),
+        getCurrentMarketState("ETH/USDT", false),
+        getCurrentMarketState("SOL/USDT", false),
+        getCurrentMarketState("DOGE/USDT", false),
+        getCurrentMarketState("BNB/USDT", false),
       ]);
 
     return NextResponse.json({

@@ -1,5 +1,5 @@
 import { EMA, MACD, RSI, ATR } from "technicalindicators";
-import { getCurrentUserBinanceClient } from "./binance";
+import { getCurrentUserBinanceClient, getDefaultBinanceClient } from "./binance";
 
 export interface MarketState {
   // Current indicators
@@ -91,14 +91,18 @@ function calculateATR(
 /**
  * Fetch current market state for a given coin symbol
  * @param symbol - Trading pair symbol (e.g., 'BTC/USDT')
+ * @param useUserClient - 是否使用用户特定的客户端，默认为true
  * @returns Market state with all technical indicators
  */
 export async function getCurrentMarketState(
-  symbol: string
+  symbol: string,
+  useUserClient: boolean = true
 ): Promise<MarketState> {
   try {
-    // 获取用户特定的Binance客户端
-    const binance = await getCurrentUserBinanceClient();
+    // 获取Binance客户端
+    const binance = useUserClient 
+      ? await getCurrentUserBinanceClient() 
+      : getDefaultBinanceClient();
     
     // Normalize symbol format for Binance
     const normalizedSymbol = symbol.includes("/") ? symbol : `${symbol}/USDT`;
