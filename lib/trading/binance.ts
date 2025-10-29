@@ -4,7 +4,9 @@ import { getMockMarketState } from "@/lib/trading/mock-market-data";
 
 // 检查是否配置了Binance API密钥
 const hasBinanceCredentials = () => {
-  return !!(process.env.BINANCE_API_KEY && process.env.BINANCE_API_SECRET);
+  const hasKey = !!(process.env.BINANCE_API_KEY && process.env.BINANCE_API_SECRET);
+  console.log("Checking Binance credentials - API_KEY:", process.env.BINANCE_API_KEY ? "SET" : "NOT SET", "API_SECRET:", process.env.BINANCE_API_SECRET ? "SET" : "NOT SET", "Result:", hasKey);
+  return hasKey;
 };
 
 // 获取代理设置
