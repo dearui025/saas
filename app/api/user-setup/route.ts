@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -39,7 +39,8 @@ export async function POST(request: Request) {
       )
     }
     
-    const supabase = await createClient()
+    // 使用管理员客户端（带有服务角色密钥）来绕过RLS策略
+    const supabase = await createAdminClient()
     
     // 创建用户配置
     const { error: profileError } = await supabase
