@@ -42,6 +42,24 @@ export async function POST(request: Request) {
     // 使用管理员客户端（带有服务角色密钥）来绕过RLS策略
     const supabase = await createAdminClient()
     
+    // 首先检查用户是否确实存在于auth.users表中
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user_id)
+      .single()
+    
+    if (userError || !userData) {
+      console.log('用户尚未在auth.users表中创建，稍后重试')
+      // 如果用户不存在，我们返回成功但不创建配置
+      // 配置将在用户确认邮箱后通过其他方式创建
+      return NextResponse.json({ 
+        success: true, 
+        message: '用户注册成功，配置将在稍后创建',
+        deferred: true
+      })
+    }
+    
     // 创建用户配置
     const { error: profileError } = await supabase
       .from('profiles')
@@ -55,6 +73,14 @@ export async function POST(request: Request) {
     
     if (profileError) {
       console.error('创建用户配置失败:', profileError)
+      // 如果是外键约束错误，返回特殊消息
+      if (profileError.message.includes('foreign key constraint')) {
+        return NextResponse.json({ 
+          success: true, 
+          message: '用户注册成功，配置将在稍后创建',
+          deferred: true
+        })
+      }
       return NextResponse.json(
         { success: false, error: `创建用户配置失败: ${profileError.message}` },
         { status: 500 }
