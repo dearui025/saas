@@ -33,21 +33,28 @@ export default function SignUpPage() {
       // 如果注册成功，设置用户配置
       if (signUpData.user) {
         // 首先测试新的API路由
-        const testResponse = await fetch('/api/test-post', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            test: 'data',
-          }),
-        });
-        
-        if (!testResponse.ok) {
-          console.error('Test API failed with status:', testResponse.status);
-        } else {
-          const testResult = await testResponse.json();
-          console.log('Test API result:', testResult);
+        try {
+          const testResponse = await fetch('/api/test-post', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              test: 'data',
+            }),
+          });
+          
+          console.log('Test API response status:', testResponse.status);
+          console.log('Test API response headers:', [...testResponse.headers.entries()]);
+          
+          if (!testResponse.ok) {
+            console.error('Test API failed with status:', testResponse.status);
+          } else {
+            const testResult = await testResponse.json();
+            console.log('Test API result:', testResult);
+          }
+        } catch (testError) {
+          console.error('Test API error:', testError);
         }
         
         // 然后调用用户设置API
@@ -63,15 +70,21 @@ export default function SignUpPage() {
           }),
         });
         
+        console.log('User setup API response status:', response.status);
+        console.log('User setup API response headers:', [...response.headers.entries()]);
+        
         // 检查响应状态
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorText = await response.text();
+          console.error('User setup API error response:', errorText);
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
         
         // 检查响应内容类型
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
-          throw new Error('服务器返回了无效的响应格式');
+          const errorText = await response.text();
+          throw new Error(`服务器返回了无效的响应格式: ${contentType}, 内容: ${errorText}`);
         }
         
         const result = await response.json();
