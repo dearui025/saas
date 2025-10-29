@@ -1,12 +1,21 @@
 import ccxt from "ccxt";
 import { createClient } from "@/lib/supabase/server";
 
+// 获取代理设置
+const getProxyConfig = () => {
+  // 检查环境变量中的代理设置
+  const httpProxy = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || 'http://127.0.0.1:7890';
+  return httpProxy;
+};
+
 export const binance = new ccxt.binance({
   apiKey: process.env.BINANCE_API_KEY,
   secret: process.env.BINANCE_API_SECRET,
   options: {
     defaultType: "future",
   },
+  // 添加代理支持
+  httpProxy: getProxyConfig(),
 });
 
 binance.setSandboxMode(process.env.BINANCE_USE_SANDBOX === "true");
@@ -19,6 +28,8 @@ export function createBinanceClient(apiKey: string, apiSecret: string, sandbox: 
     options: {
       defaultType: "future",
     },
+    // 添加代理支持
+    httpProxy: getProxyConfig(),
   });
 
   client.setSandboxMode(sandbox);
