@@ -1,5 +1,6 @@
 import { EMA, MACD, RSI, ATR } from "technicalindicators";
-import { getCurrentUserBinanceClient, getDefaultBinanceClient } from "./binance";
+import { getCurrentUserBinanceClient, getDefaultBinanceClient, canUseRealBinanceClient } from "./binance";
+import { getMockMarketState, MockMarketState } from "@/lib/trading/mock-market-data";
 
 export interface MarketState {
   // Current indicators
@@ -97,129 +98,144 @@ function calculateATR(
 export async function getCurrentMarketState(
   symbol: string,
   useUserClient: boolean = true
-): Promise<MarketState> {
+): Promise<MarketState | MockMarketState> {
   try {
-    // 获取Binance客户端
-    const binance = useUserClient 
-      ? await getCurrentUserBinanceClient() 
-      : getDefaultBinanceClient();
-    
-    // Normalize symbol format for Binance
-    const normalizedSymbol = symbol.includes("/") ? symbol : `${symbol}/USDT`;
+    // 检查是否可以使用真实的Binance客户端
+    if (canUseRealBinanceClient()) {
+      // 获取Binance客户端
+      const binance = useUserClient 
+        ? await getCurrentUserBinanceClient() 
+        : getDefaultBinanceClient();
+      
+      // 如果客户端不可用，使用模拟数据
+      if (!binance) {
+        console.warn("Binance client not available, using mock data");
+        return getMockMarketState(symbol);
+      }
+      
+      // Normalize symbol format for Binance
+      const normalizedSymbol = symbol.includes("/") ? symbol : `${symbol}/USDT`;
 
-    // Fetch 1-minute OHLCV data (last 100 candles for intraday analysis)
-    const ohlcv1m = await binance.fetchOHLCV(
-      normalizedSymbol,
-      "1m",
-      undefined,
-      100
-    );
+      // Fetch 1-minute OHLCV data (last 100 candles for intraday analysis)
+      const ohlcv1m = await binance.fetchOHLCV(
+        normalizedSymbol,
+        "1m",
+        undefined,
+        100
+      );
 
-    // Fetch 4-hour OHLCV data (last 100 candles for longer-term context)
-    const ohlcv4h = await binance.fetchOHLCV(
-      normalizedSymbol,
-      "4h",
-      undefined,
-      100
-    );
+      // Fetch 4-hour OHLCV data (last 100 candles for longer-term context)
+      const ohlcv4h = await binance.fetchOHLCV(
+        normalizedSymbol,
+        "4h",
+        undefined,
+        100
+      );
 
-    // Extract price data from 1-minute candles
-    const closes1m = ohlcv1m.map((candle) => Number(candle[4])); // Close prices
+      // Extract price data from 1-minute candles
+      const closes1m = ohlcv1m.map((candle) => Number(candle[4])); // Close prices
 
-    // Extract price data from 4-hour candles
-    const closes4h = ohlcv4h.map((candle) => Number(candle[4]));
-    const highs4h = ohlcv4h.map((candle) => Number(candle[2]));
-    const lows4h = ohlcv4h.map((candle) => Number(candle[3]));
-    const volumes4h = ohlcv4h.map((candle) => Number(candle[5]));
+      // Extract price data from 4-hour candles
+      const closes4h = ohlcv4h.map((candle) => Number(candle[4]));
+      const highs4h = ohlcv4h.map((candle) => Number(candle[2]));
+      const lows4h = ohlcv4h.map((candle) => Number(candle[3]));
+      const volumes4h = ohlcv4h.map((candle) => Number(candle[5]));
 
-    // Calculate intraday indicators (1-minute timeframe)
-    const ema20_1m = calculateEMA(closes1m, 20);
-    const macd_1m = calculateMACD(closes1m);
-    const rsi7_1m = calculateRSI(closes1m, 7);
-    const rsi14_1m = calculateRSI(closes1m, 14);
+      // Calculate intraday indicators (1-minute timeframe)
+      const ema20_1m = calculateEMA(closes1m, 20);
+      const macd_1m = calculateMACD(closes1m);
+      const rsi7_1m = calculateRSI(closes1m, 7);
+      const rsi14_1m = calculateRSI(closes1m, 14);
 
-    // Calculate longer-term indicators (4-hour timeframe)
-    const ema20_4h = calculateEMA(closes4h, 20);
-    const ema50_4h = calculateEMA(closes4h, 50);
-    const atr3_4h = calculateATR(highs4h, lows4h, closes4h, 3);
-    const atr14_4h = calculateATR(highs4h, lows4h, closes4h, 14);
-    const macd_4h = calculateMACD(closes4h);
-    const rsi14_4h = calculateRSI(closes4h, 14);
+      // Calculate longer-term indicators (4-hour timeframe)
+      const ema20_4h = calculateEMA(closes4h, 20);
+      const ema50_4h = calculateEMA(closes4h, 50);
+      const atr3_4h = calculateATR(highs4h, lows4h, closes4h, 3);
+      const atr14_4h = calculateATR(highs4h, lows4h, closes4h, 14);
+      const macd_4h = calculateMACD(closes4h);
+      const rsi14_4h = calculateRSI(closes4h, 14);
 
-    // Get last 10 values for intraday series
-    const last10MidPrices = closes1m.slice(-10);
-    const last10EMA20 = ema20_1m.slice(-10).map((v) => Number(v) || 0);
-    const last10MACD = macd_1m.slice(-10).map((v) => Number(v) || 0);
-    const last10RSI7 = rsi7_1m.slice(-10).map((v) => Number(v) || 0);
-    const last10RSI14 = rsi14_1m.slice(-10).map((v) => Number(v) || 0);
+      // Get last 10 values for intraday series
+      const last10MidPrices = closes1m.slice(-10);
+      const last10EMA20 = ema20_1m.slice(-10).map((v) => Number(v) || 0);
+      const last10MACD = macd_1m.slice(-10).map((v) => Number(v) || 0);
+      const last10RSI7 = rsi7_1m.slice(-10).map((v) => Number(v) || 0);
+      const last10RSI14 = rsi14_1m.slice(-10).map((v) => Number(v) || 0);
 
-    // Get last 10 MACD and RSI values for 4-hour timeframe
-    const last10MACD4h = macd_4h.slice(-10).map((v) => Number(v) || 0);
-    const last10RSI14_4h = rsi14_4h.slice(-10).map((v) => Number(v) || 0);
+      // Get last 10 MACD and RSI values for 4-hour timeframe
+      const last10MACD4h = macd_4h.slice(-10).map((v) => Number(v) || 0);
+      const last10RSI14_4h = rsi14_4h.slice(-10).map((v) => Number(v) || 0);
 
-    // Current values (latest)
-    const current_price = Number(closes1m[closes1m.length - 1]) || 0;
-    const current_ema20 = Number(ema20_1m[ema20_1m.length - 1]) || 0;
-    const current_macd = Number(macd_1m[macd_1m.length - 1]) || 0;
-    const current_rsi = Number(rsi7_1m[rsi7_1m.length - 1]) || 0;
+      // Current values (latest)
+      const current_price = Number(closes1m[closes1m.length - 1]) || 0;
+      const current_ema20 = Number(ema20_1m[ema20_1m.length - 1]) || 0;
+      const current_macd = Number(macd_1m[macd_1m.length - 1]) || 0;
+      const current_rsi = Number(rsi7_1m[rsi7_1m.length - 1]) || 0;
 
-    // Fetch open interest and funding rate for perpetual futures
-    const openInterestData = { latest: 0, average: 0 };
-    let fundingRate = 0;
+      // Fetch open interest and funding rate for perpetual futures
+      const openInterestData = { latest: 0, average: 0 };
+      let fundingRate = 0;
 
-    try {
-      // Try to fetch open interest
-      const perpSymbol = normalizedSymbol.replace("/", "");
-      const openInterest = await binance.fetchOpenInterest(perpSymbol);
+      try {
+        // Try to fetch open interest
+        const perpSymbol = normalizedSymbol.replace("/", "");
+        const openInterest = await binance.fetchOpenInterest(perpSymbol);
 
-      if (openInterest && typeof openInterest.openInterestAmount === "number") {
-        openInterestData.latest = openInterest.openInterestAmount;
-        openInterestData.average = openInterest.openInterestAmount; // Using same value as average
+        if (openInterest && typeof openInterest.openInterestAmount === "number") {
+          openInterestData.latest = openInterest.openInterestAmount;
+          openInterestData.average = openInterest.openInterestAmount; // Using same value as average
+        }
+
+        // Try to fetch funding rate
+        const fundingRates = await binance.fetchFundingRate(normalizedSymbol);
+        if (fundingRates && typeof fundingRates.fundingRate === "number") {
+          fundingRate = fundingRates.fundingRate;
+        }
+      } catch (error) {
+        console.warn("Could not fetch open interest or funding rate:", error);
+        // Continue with default values
       }
 
-      // Try to fetch funding rate
-      const fundingRates = await binance.fetchFundingRate(normalizedSymbol);
-      if (fundingRates && typeof fundingRates.fundingRate === "number") {
-        fundingRate = fundingRates.fundingRate;
-      }
-    } catch (error) {
-      console.warn("Could not fetch open interest or funding rate:", error);
-      // Continue with default values
+      // Calculate average volume for 4-hour timeframe
+      const averageVolume4h =
+        volumes4h.reduce((sum, vol) => sum + vol, 0) / volumes4h.length;
+      const currentVolume4h = volumes4h[volumes4h.length - 1];
+
+      return {
+        current_price,
+        current_ema20,
+        current_macd,
+        current_rsi,
+        open_interest: openInterestData,
+        funding_rate: fundingRate,
+        intraday: {
+          mid_prices: last10MidPrices,
+          ema_20: last10EMA20,
+          macd: last10MACD,
+          rsi_7: last10RSI7,
+          rsi_14: last10RSI14,
+        },
+        longer_term: {
+          ema_20: Number(ema20_4h[ema20_4h.length - 1]) || 0,
+          ema_50: Number(ema50_4h[ema50_4h.length - 1]) || 0,
+          atr_3: Number(atr3_4h[atr3_4h.length - 1]) || 0,
+          atr_14: Number(atr14_4h[atr14_4h.length - 1]) || 0,
+          current_volume: currentVolume4h,
+          average_volume: averageVolume4h,
+          macd: last10MACD4h,
+          rsi_14: last10RSI14_4h,
+        },
+      };
+    } else {
+      // 如果无法使用真实的Binance客户端，使用模拟数据
+      console.warn("Real Binance client not available, using mock data");
+      return getMockMarketState(symbol);
     }
-
-    // Calculate average volume for 4-hour timeframe
-    const averageVolume4h =
-      volumes4h.reduce((sum, vol) => sum + vol, 0) / volumes4h.length;
-    const currentVolume4h = volumes4h[volumes4h.length - 1];
-
-    return {
-      current_price,
-      current_ema20,
-      current_macd,
-      current_rsi,
-      open_interest: openInterestData,
-      funding_rate: fundingRate,
-      intraday: {
-        mid_prices: last10MidPrices,
-        ema_20: last10EMA20,
-        macd: last10MACD,
-        rsi_7: last10RSI7,
-        rsi_14: last10RSI14,
-      },
-      longer_term: {
-        ema_20: Number(ema20_4h[ema20_4h.length - 1]) || 0,
-        ema_50: Number(ema50_4h[ema50_4h.length - 1]) || 0,
-        atr_3: Number(atr3_4h[atr3_4h.length - 1]) || 0,
-        atr_14: Number(atr14_4h[atr14_4h.length - 1]) || 0,
-        current_volume: currentVolume4h,
-        average_volume: averageVolume4h,
-        macd: last10MACD4h,
-        rsi_14: last10RSI14_4h,
-      },
-    };
   } catch (error) {
     console.error("Error fetching market state:", error);
-    throw error;
+    // 出错时使用模拟数据
+    console.warn("Using mock data due to error");
+    return getMockMarketState(symbol);
   }
 }
 

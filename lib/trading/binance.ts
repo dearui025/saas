@@ -1,5 +1,11 @@
 import ccxt from "ccxt";
 import { createClient } from "@/lib/supabase/server";
+import { getMockMarketState } from "@/lib/trading/mock-market-data";
+
+// 检查是否配置了Binance API密钥
+const hasBinanceCredentials = () => {
+  return !!(process.env.BINANCE_API_KEY && process.env.BINANCE_API_SECRET);
+};
 
 // 获取代理设置
 const getProxyConfig = () => {
@@ -8,17 +14,31 @@ const getProxyConfig = () => {
   return httpProxy;
 };
 
-export const binance = new ccxt.binance({
-  apiKey: process.env.BINANCE_API_KEY,
-  secret: process.env.BINANCE_API_SECRET,
-  options: {
-    defaultType: "future",
-  },
-  // 添加代理支持
-  httpProxy: getProxyConfig(),
-});
+// 创建默认的Binance客户端
+const createDefaultBinanceClient = () => {
+  // 如果没有配置API密钥，返回null
+  if (!hasBinanceCredentials()) {
+    return null;
+  }
+  
+  const client = new ccxt.binance({
+    apiKey: process.env.BINANCE_API_KEY,
+    secret: process.env.BINANCE_API_SECRET,
+    options: {
+      defaultType: "future",
+    },
+    // 添加代理支持
+    httpProxy: getProxyConfig(),
+  });
 
-binance.setSandboxMode(process.env.BINANCE_USE_SANDBOX === "true");
+  client.setSandboxMode(process.env.BINANCE_USE_SANDBOX === "true");
+  return client;
+};
+
+// 创建默认的Binance客户端实例
+const defaultBinanceClient = createDefaultBinanceClient();
+
+export const binance = defaultBinanceClient;
 
 // 创建用户特定的Binance客户端
 export function createBinanceClient(apiKey: string, apiSecret: string, sandbox: boolean = true) {
@@ -76,4 +96,9 @@ export async function getCurrentUserBinanceClient() {
 // 获取默认的Binance客户端（用于API路由等无用户上下文的场景）
 export function getDefaultBinanceClient() {
   return binance;
+}
+
+// 检查是否可以使用真实的Binance客户端
+export function canUseRealBinanceClient(): boolean {
+  return !!binance;
 }
