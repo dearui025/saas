@@ -26,6 +26,20 @@ export async function getAccountInformationAndPerformance(
     ? createBinanceClient(config.apiKey, config.apiSecret, config.sandbox)
     : binance;
 
+  // 检查客户端是否可用
+  if (!client) {
+    // 返回默认值
+    return {
+      currentPositionsValue: 0,
+      contractValue: 0,
+      totalCashValue: 10000,
+      availableCash: 10000,
+      currentTotalReturn: 0,
+      positions: [],
+      sharpeRatio: 0,
+    };
+  }
+
   const positions = await client.fetchPositions(["BTC/USDT"]);
   const currentPositionsValue = positions.reduce((acc, position) => {
     return acc + (position.initialMargin || 0) + (position.unrealizedPnl || 0);
