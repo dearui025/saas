@@ -32,7 +32,29 @@ export default function SignUpPage() {
       
       // 如果注册成功，设置用户配置
       if (signUpData.user) {
-        // 首先测试新的API路由
+        // 首先测试简单的API路由
+        try {
+          const simpleTestResponse = await fetch('/api/simple-test', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          console.log('Simple test API response status:', simpleTestResponse.status);
+          console.log('Simple test API response headers:', [...simpleTestResponse.headers.entries()]);
+          
+          if (!simpleTestResponse.ok) {
+            console.error('Simple test API failed with status:', simpleTestResponse.status);
+          } else {
+            const simpleTestResult = await simpleTestResponse.json();
+            console.log('Simple test API result:', simpleTestResult);
+          }
+        } catch (simpleTestError) {
+          console.error('Simple test API error:', simpleTestError);
+        }
+        
+        // 然后测试新的API路由
         try {
           const testResponse = await fetch('/api/test-post', {
             method: 'POST',
@@ -57,7 +79,7 @@ export default function SignUpPage() {
           console.error('Test API error:', testError);
         }
         
-        // 然后调用用户设置API
+        // 最后调用用户设置API
         const response = await fetch('/api/user-setup', {
           method: 'POST',
           headers: {
