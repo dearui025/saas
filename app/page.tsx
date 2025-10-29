@@ -48,19 +48,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string>("");
 
-  async function handleSignOut() {
-    await signOut();
-    router.push("/login");
-  }
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-lg">加载中...</div>
-      </div>
-    );
-  }
-
   // 获取图表数据
   const fetchMetrics = useCallback(async () => {
     try {
@@ -95,7 +82,15 @@ export default function Home() {
     }
   }, []);
 
+  async function handleSignOut() {
+    await signOut();
+    router.push("/login");
+  }
+
   useEffect(() => {
+    // 只有在用户已认证且不在加载状态时才获取数据
+    if (authLoading) return;
+    
     // 初始加载
     fetchMetrics();
     fetchPricing();
@@ -108,7 +103,15 @@ export default function Home() {
       clearInterval(metricsInterval);
       clearInterval(pricingInterval);
     };
-  }, [fetchMetrics, fetchPricing]);
+  }, [authLoading, fetchMetrics, fetchPricing]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-lg">加载中...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
