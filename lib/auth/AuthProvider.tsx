@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { createClient as createServerClient } from '@/lib/supabase/server';
 import { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -67,7 +68,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // 创建用户配置
     if (data.user) {
-      const { error: profileError } = await supabase
+      // 使用服务端客户端来绕过RLS限制
+      const serverSupabase = await createServerClient();
+      
+      const { error: profileError } = await serverSupabase
         .from('profiles')
         .insert([
           {
@@ -87,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // 创建默认API密钥记录
-      const { error: apiKeyError } = await supabase
+      const { error: apiKeyError } = await serverSupabase
         .from('user_api_keys')
         .insert([
           {
