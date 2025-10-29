@@ -32,6 +32,25 @@ export default function SignUpPage() {
       
       // 如果注册成功，设置用户配置
       if (signUpData.user) {
+        // 首先测试新的API路由
+        const testResponse = await fetch('/api/test-post', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            test: 'data',
+          }),
+        });
+        
+        if (!testResponse.ok) {
+          console.error('Test API failed with status:', testResponse.status);
+        } else {
+          const testResult = await testResponse.json();
+          console.log('Test API result:', testResult);
+        }
+        
+        // 然后调用用户设置API
         const response = await fetch('/api/user-setup', {
           method: 'POST',
           headers: {
