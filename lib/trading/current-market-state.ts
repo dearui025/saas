@@ -1,5 +1,5 @@
 import { EMA, MACD, RSI, ATR } from "technicalindicators";
-import { binance } from "./binance";
+import { getCurrentUserBinanceClient } from "./binance";
 
 export interface MarketState {
   // Current indicators
@@ -97,6 +97,9 @@ export async function getCurrentMarketState(
   symbol: string
 ): Promise<MarketState> {
   try {
+    // 获取用户特定的Binance客户端
+    const binance = await getCurrentUserBinanceClient();
+    
     // Normalize symbol format for Binance
     const normalizedSymbol = symbol.includes("/") ? symbol : `${symbol}/USDT`;
 
