@@ -58,3 +58,4 @@ build/
 # Local development files
 *.local
 node_modules
+.vercel
