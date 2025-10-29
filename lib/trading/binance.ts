@@ -13,13 +13,16 @@ const hasBinanceCredentials = () => {
     apiKey.length > 10 && 
     apiSecret.length > 10);
   
-  console.log("Checking Binance credentials:", {
-    hasApiKey: !!apiKey,
-    hasApiSecret: !!apiSecret,
-    apiKeyLength: apiKey ? apiKey.length : 0,
-    apiSecretLength: apiSecret ? apiSecret.length : 0,
-    hasValidCredentials
-  });
+  // 在服务器端记录调试信息
+  if (typeof window === 'undefined') {
+    console.log("Binance credentials check:", {
+      hasApiKey: !!apiKey,
+      hasApiSecret: !!apiSecret,
+      apiKeyLength: apiKey ? apiKey.length : 0,
+      apiSecretLength: apiSecret ? apiSecret.length : 0,
+      hasValidCredentials
+    });
+  }
   
   return hasValidCredentials;
 };
@@ -35,15 +38,15 @@ const getProxyConfig = () => {
 const createDefaultBinanceClient = () => {
   // 检查是否配置了有效的Binance凭证
   if (!hasBinanceCredentials()) {
-    console.log("No valid Binance credentials found, returning null client");
-    return null;
+    console.log("No valid Binance credentials found, will attempt to create client anyway");
+    // 即使没有凭证也创建客户端，因为Binance允许匿名访问市场数据
   }
   
-  console.log("Creating Binance client with credentials");
+  console.log("Creating Binance client");
   
   const client = new ccxt.binance({
-    apiKey: process.env.BINANCE_API_KEY,
-    secret: process.env.BINANCE_API_SECRET,
+    apiKey: process.env.BINANCE_API_KEY || '',
+    secret: process.env.BINANCE_API_SECRET || '',
     options: {
       defaultType: "future",
     },
@@ -120,5 +123,6 @@ export function getDefaultBinanceClient() {
 
 // 检查是否可以使用真实的Binance客户端
 export function canUseRealBinanceClient(): boolean {
-  return !!binance;
+  // 总是返回true，因为即使没有API密钥，Binance也允许匿名访问市场数据
+  return true;
 }
