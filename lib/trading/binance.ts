@@ -4,9 +4,19 @@ import { getMockMarketState } from "@/lib/trading/mock-market-data";
 
 // 检查是否配置了Binance API密钥
 const hasBinanceCredentials = () => {
-  const hasKey = !!(process.env.BINANCE_API_KEY && process.env.BINANCE_API_SECRET);
-  console.log("Checking Binance credentials - API_KEY:", process.env.BINANCE_API_KEY ? "SET" : "NOT SET", "API_SECRET:", process.env.BINANCE_API_SECRET ? "SET" : "NOT SET", "Result:", hasKey);
-  return hasKey;
+  // 检查环境变量是否已设置
+  const apiKey = process.env.BINANCE_API_KEY;
+  const apiSecret = process.env.BINANCE_API_SECRET;
+  
+  // 在生产环境中，即使环境变量存在，它们可能是加密的占位符
+  // 我们需要检查它们是否是有效的密钥（不是占位符）
+  const hasValidCredentials = !!(apiKey && apiSecret && 
+    !apiKey.includes('***') && 
+    !apiSecret.includes('***') &&
+    apiKey.length > 10 && 
+    apiSecret.length > 10);
+  
+  return hasValidCredentials;
 };
 
 // 获取代理设置
@@ -18,10 +28,13 @@ const getProxyConfig = () => {
 
 // 创建默认的Binance客户端
 const createDefaultBinanceClient = () => {
-  // 如果没有配置API密钥，返回null
+  // 检查是否配置了有效的Binance凭证
   if (!hasBinanceCredentials()) {
+    console.log("No valid Binance credentials found, returning null client");
     return null;
   }
+  
+  console.log("Creating Binance client with credentials");
   
   const client = new ccxt.binance({
     apiKey: process.env.BINANCE_API_KEY,
