@@ -8,13 +8,18 @@ const hasBinanceCredentials = () => {
   const apiKey = process.env.BINANCE_API_KEY;
   const apiSecret = process.env.BINANCE_API_SECRET;
   
-  // 在生产环境中，即使环境变量存在，它们可能是加密的占位符
-  // 我们需要检查它们是否是有效的密钥（不是占位符）
+  // 检查它们是否是有效的密钥（存在且长度合理）
   const hasValidCredentials = !!(apiKey && apiSecret && 
-    !apiKey.includes('***') && 
-    !apiSecret.includes('***') &&
     apiKey.length > 10 && 
     apiSecret.length > 10);
+  
+  console.log("Checking Binance credentials:", {
+    hasApiKey: !!apiKey,
+    hasApiSecret: !!apiSecret,
+    apiKeyLength: apiKey ? apiKey.length : 0,
+    apiSecretLength: apiSecret ? apiSecret.length : 0,
+    hasValidCredentials
+  });
   
   return hasValidCredentials;
 };
