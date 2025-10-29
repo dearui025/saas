@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { createClient as createServerClient } from '@/lib/supabase/server';
 import { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -66,49 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     if (error) throw error;
 
-    // 创建用户配置
-    if (data.user) {
-      // 使用服务端客户端来绕过RLS限制
-      const serverSupabase = await createServerClient();
-      
-      const { error: profileError } = await serverSupabase
-        .from('profiles')
-        .insert([
-          {
-            id: data.user.id,
-            email: data.user.email,
-            full_name: fullName,
-          },
-        ]);
-      
-      if (profileError) {
-        console.error('创建用户配置失败:', profileError);
-        console.error('用户ID:', data.user.id);
-        console.error('用户邮箱:', data.user.email);
-        console.error('用户全名:', fullName);
-        // 抛出错误以便上层能够处理
-        throw new Error(`创建用户配置失败: ${profileError.message || '未知错误'}`);
-      }
-
-      // 创建默认API密钥记录
-      const { error: apiKeyError } = await serverSupabase
-        .from('user_api_keys')
-        .insert([
-          {
-            user_id: data.user.id,
-            binance_use_sandbox: true,
-            start_money: 10000,
-            trading_enabled: false,
-          },
-        ]);
-      
-      if (apiKeyError) {
-        console.error('创建API密钥记录失败:', apiKeyError);
-        console.error('用户ID:', data.user.id);
-        // 抛出错误以便上层能够处理
-        throw new Error(`创建API密钥记录失败: ${apiKeyError.message || '未知错误'}`);
-      }
-    }
+    // 创建用户配置和API密钥记录将在服务器端处理
+    // 通过API路由而不是直接在客户端组件中处理
     
     return data;
   }

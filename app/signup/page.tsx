@@ -28,7 +28,29 @@ export default function SignUpPage() {
     }
 
     try {
-      await signUp(email, password, fullName);
+      const signUpData = await signUp(email, password, fullName);
+      
+      // 如果注册成功，设置用户配置
+      if (signUpData.user) {
+        const response = await fetch('/api/user-setup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: signUpData.user.id,
+            email: signUpData.user.email,
+            full_name: fullName,
+          }),
+        });
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.error || '用户设置失败');
+        }
+      }
+      
       router.push("/");
       router.refresh();
     } catch (err: any) {
